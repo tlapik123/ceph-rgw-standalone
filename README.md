@@ -20,7 +20,8 @@ mkdir -p rgw-data
 podman run -d --name rgw -p 127.0.0.1:7480:7480 -v ./rgw-data:/data:Z ghcr.io/tlapik123/ceph-rgw-standalone
 ```
 
-Docker works the same way (drop the `:Z`).
+The `./` prefix is what makes the source a host path; a bare name like `rgw-data` is a volume
+name. Docker works the same way (drop the `:Z`).
 
 | | |
 |---|---|
@@ -48,12 +49,29 @@ aws s3 ls s3://test-bucket
 | `RGW_UID` | `testuser` | S3 user created at start if missing |
 | `RGW_ACCESS_KEY` | `localtest` | |
 | `RGW_SECRET_KEY` | `localtest-secret` | |
+| `RGW_TLS` | unset | `1` also serves HTTPS on 7443, see below |
 
 On an existing data directory the entrypoint makes the env pair the user's only key:
 the RGW user database authenticates one key per user, so any other key is removed at start.
 
 Arguments after the image name go to `radosgw`, e.g. `--debug-rgw 20`.
 Other admin tasks: `podman exec rgw radosgw-admin user list`.
+
+## TLS
+
+```sh
+podman run -d --name rgw -p 127.0.0.1:7480:7480 -p 127.0.0.1:7443:7443 -e RGW_TLS=1 -v rgw-data:/data ghcr.io/tlapik123/ceph-rgw-standalone
+```
+
+With `RGW_TLS=1` the container also serves HTTPS on 7443 using `<data>/tls/rgw.crt` and
+`<data>/tls/rgw.key`. If they are missing, a self-signed pair for `localhost` and `127.0.0.1`
+is generated on first start. Put your own files there to use them instead. To trust the
+generated certificate on the client:
+
+```sh
+podman cp rgw:/data/tls/rgw.crt rgw.crt
+aws --endpoint-url https://127.0.0.1:7443 --ca-bundle rgw.crt s3 ls
+```
 
 ## Tags
 
