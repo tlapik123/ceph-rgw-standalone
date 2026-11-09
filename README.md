@@ -65,8 +65,11 @@ podman run -d --name rgw -p 127.0.0.1:7480:7480 -p 127.0.0.1:7443:7443 -e RGW_TL
 
 With `RGW_TLS=1` the container also serves HTTPS on 7443 using `<data>/tls/rgw.crt` and
 `<data>/tls/rgw.key`. If they are missing, a self-signed pair for `localhost` and `127.0.0.1`
-is generated on first start. Put your own files there to use them instead. To trust the
-generated certificate on the client:
+is generated on first start. To use your own pair, place both files there: with a bind mount
+before the first start, with a named volume via `podman cp` into the running container followed
+by a restart. A `--rgw-frontends` argument of your own replaces this frontend setup, TLS
+included; the health check always probes HTTP on 7480. To trust the generated certificate on
+the client:
 
 ```sh
 podman cp rgw:/data/tls/rgw.crt rgw.crt
