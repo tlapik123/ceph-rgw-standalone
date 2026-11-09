@@ -3,7 +3,8 @@
 Ceph RADOS Gateway (S3) without a Ceph cluster: the official
 [`quay.io/ceph/ceph`](https://quay.io/repository/ceph/ceph) release image plus a `ceph.conf`
 and an entrypoint. Objects are stored as plain files (RGW POSIX backend), metadata in
-SQLite/LMDB next to them. For development and testing only.
+SQLite/LMDB next to them. For development and testing only. A `-slim` variant carries only
+the RGW packages, see [Tags](#tags).
 
 ## Quickstart
 
@@ -78,8 +79,10 @@ aws --endpoint-url https://127.0.0.1:7443 --ca-bundle rgw.crt s3 ls
 
 ## Tags
 
-`:v21.2.0` is the Ceph release the image is built from; `:latest` tracks it. Images are
-built for linux/amd64 and linux/arm64 by GitHub Actions from this repository.
+`:v21.2.0` is the Ceph release the image is built from; `:latest` tracks it. `:v21.2.0-slim`
+and `:slim` are Rocky Linux 10 minimal plus only the `ceph-radosgw` RPM and its dependencies
+from download.ceph.com: same binaries, config and entrypoint in a fraction of the 1.8 GB.
+Images are built for linux/amd64 and linux/arm64 by GitHub Actions from this repository.
 
 ## See also
 
