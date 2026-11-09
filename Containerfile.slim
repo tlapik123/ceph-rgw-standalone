@@ -1,0 +1,22 @@
+ARG CEPH_VERSION=v21.2.0
+FROM quay.io/rockylinux/rockylinux:10-minimal
+ARG CEPH_VERSION
+# Upstream ceph/ceph container/Containerfile recipe (EPEL + CRB, no weak deps, no docs), but
+# only ceph-radosgw. jq and python3-cryptography: entrypoint.sh; curl (HEALTHCHECK) is in the base.
+RUN rpm --import https://download.ceph.com/keys/release.asc \
+ && printf '[ceph]\nname=Ceph\nbaseurl=https://download.ceph.com/rpm-%s/el10/$basearch\ngpgcheck=1\n' \
+      "${CEPH_VERSION#v}" >/etc/yum.repos.d/ceph.repo \
+ && microdnf -y --nodocs --setopt=install_weak_deps=0 install epel-release \
+ && microdnf -y --nodocs --setopt=install_weak_deps=0 --enablerepo=crb install ceph-radosgw jq python3-cryptography \
+ && microdnf clean all \
+ && rm -rf /etc/selinux /usr/share/selinux /var/cache/dnf /var/lib/dnf
+COPY ceph.conf /etc/ceph/ceph.conf
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+ENV RGW_UID=testuser RGW_ACCESS_KEY=localtest RGW_SECRET_KEY=localtest-secret
+LABEL org.opencontainers.image.source=https://github.com/tlapik123/ceph-rgw-standalone \
+      org.opencontainers.image.title=ceph-rgw-standalone \
+      org.opencontainers.image.licenses=Apache-2.0
+VOLUME /data
+EXPOSE 7480 7443
+HEALTHCHECK --interval=10s --timeout=3s --start-period=30s CMD curl -sf http://127.0.0.1:7480/ || exit 1
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
